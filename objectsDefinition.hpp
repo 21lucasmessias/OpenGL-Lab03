@@ -10,7 +10,7 @@ using namespace std;
 using namespace glm;
 
 struct ObjectProperties {
-	vector<GLfloat> vertices;
+	vector<GLfloat> object;
 	vector<GLushort> indexs;
 };
 
@@ -24,7 +24,7 @@ struct ObjectsToRender {
 	vec3 translation;
 	RotationObject rotation;
 	vec3 scaling;
-	vector<GLfloat> colors;
+	GLushort index_texture;
 };
 
 extern vector<ObjectProperties> objects;

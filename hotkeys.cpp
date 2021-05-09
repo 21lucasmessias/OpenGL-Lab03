@@ -1,106 +1,46 @@
 #include "hotkeys.hpp"
 
 void processInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (action == GLFW_PRESS) {
-		switch (key) {
-			case GLFW_KEY_SPACE: {
-				if (states.wireframe)
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				else
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		if (key == GLFW_KEY_SPACE) {
+			if (states.wireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				states.wireframe = !states.wireframe;
+			states.wireframe = !states.wireframe;
+		}
+		else if (key == GLFW_KEY_ESCAPE) {
+			glfwSetWindowShouldClose(window, true);
+		}
+		else if (key == GLFW_KEY_UP) {
+			states.cameraPosition[0] = states.cameraPosition[0] - (GLfloat)sin(states.cameraRotationX * states.pi / 180);
+			states.cameraPosition[1] = states.cameraPosition[1] - (GLfloat)sin(states.cameraRotationY * states.pi / 180);
+			states.cameraPosition[2] = states.cameraPosition[2] + (GLfloat)cos(states.cameraRotationX * states.pi / 180);
+		}
+		else if (key == GLFW_KEY_DOWN) {
+			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin(states.cameraRotationX * states.pi / 180);
+			states.cameraPosition[1] = states.cameraPosition[1] + (GLfloat)sin(states.cameraRotationY * states.pi / 180);
+			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos(states.cameraRotationX * states.pi / 180);
+		}
+		else if (key == GLFW_KEY_LEFT) {
+			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin((states.cameraRotationX + 90.0f) * states.pi / 180);
+			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos((states.cameraRotationX + 90.0f) * states.pi / 180);
 
-				break;
-			}
-
-			case GLFW_KEY_ESCAPE: {
-				glfwSetWindowShouldClose(window, true);
-
-				break;
-			}
-
-			case GLFW_KEY_KP_ADD: {
-				cout << states.speed << endl;
-				if (states.speed >= 10.0f) {
-					states.speed = 10.0f;
-				}
-				else if (states.speed < 1.0f) {
-					states.speed = states.speed + 0.05f;
-				}
-				else {
-					states.speed = states.speed + 1.0f;
-				}
-
-				break;
-			}
-
-
-			case GLFW_KEY_KP_SUBTRACT: {
-				cout << states.speed << endl;
-				if (states.speed <= 0.01f) {
-					states.speed = 0.0f;
-				}
-				else if (states.speed > 1.0f) {
-					states.speed = states.speed - 1.0f;
-				}
-				else {
-					states.speed = states.speed - 0.05f;
-				}
-
-				break;
-			}
-
-			case GLFW_KEY_UP: {
-				states.cameraZ = states.cameraZ - states.speed;
-				break;
-			}
-
-			case GLFW_KEY_DOWN: {
-				states.cameraZ = states.cameraZ + states.speed;
-				break;
-			}
-
-			case GLFW_KEY_LEFT: {
-				states.cameraX = states.cameraX - states.speed;
-
-				break;
-			}
-
-			case GLFW_KEY_RIGHT: {
-				states.cameraX = states.cameraX + states.speed;
-
-				break;
-			}
-
-			default:
-				break;
-			}
-	}
-
-	if (action == GLFW_REPEAT) {
-		switch (key) {
-			case GLFW_KEY_UP: {
-				states.cameraZ = states.cameraZ - states.speed;
-				break;
-			}
-
-			case GLFW_KEY_DOWN: {
-				states.cameraZ = states.cameraZ + states.speed;
-				break;
-			}
-
-			case GLFW_KEY_LEFT: {
-				states.cameraX = states.cameraX - states.speed;
-
-				break;
-			}
-
-			case GLFW_KEY_RIGHT: {
-				states.cameraX = states.cameraX + states.speed;
-
-				break;
-			}
+		}
+		else if (key == GLFW_KEY_RIGHT) {
+			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin((states.cameraRotationX - 90.0f) * states.pi / 180);	
+			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos((states.cameraRotationX - 90.0f) * states.pi / 180);
 		}
 	}
+}
+
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+	states.eye[0] = (GLfloat)sin(xpos * states.pi / 180);
+	states.eye[1] = (GLfloat)sin(ypos * states.pi / 180);
+	states.eye[2] = (GLfloat)cos(xpos * states.pi / 180) * -1;
+
+	states.cameraRotationX = (GLfloat)xpos;
+	states.cameraRotationY = (GLfloat)ypos;
 }

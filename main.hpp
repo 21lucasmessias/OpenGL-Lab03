@@ -9,6 +9,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <GL/GL.h>
+#include "SOIL2/SOIL2.h"
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -16,10 +17,12 @@
 
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #include "hotkeys.hpp"
 #include "renderResolvers.hpp"
 #include "objectsDefinition.hpp"
 #include "states.hpp"
+#include "textures.hpp"
 
 #endif

@@ -13,11 +13,11 @@ GLuint program;
 GLuint vertex_array_object;
 GLuint vertex_buffer_object;
 GLuint vertex_buffer_object_index;
-GLuint vertex_buffer_object_colors;
+GLuint vertex_buffer_lighting;
 
 GLuint objIndex;
+GLuint indexTexture;
 
-//mat4 valueptr;
 GLuint viewLoc;
 GLuint modelViewLoc;
 GLuint projectionLoc;
@@ -26,7 +26,9 @@ mat4 viewMatrix;
 mat4 modelMatrix;
 mat4 viewCamera;
 
-mat4 projectionMatrix = perspective(1.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 500000.0f);
+GLuint texture;
+
+mat4 projectionMatrix = perspective(1.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 50000.0f);
 
 int initalization() {
 	if (!glfwInit()) {
@@ -79,33 +81,35 @@ void compileShaders() {
 		"#version 450 core																	\n"
 		"layout (location = 0) in vec3 pos;													\n"
 		"layout (location = 1) in vec3 color; 												\n"
+		"layout (location = 2) in vec2 texture_coord;										\n"
 		"																					\n"
 		"uniform mat4 model; 																\n"
 		"uniform mat4 view; 																\n"
 		"uniform mat4 projection; 															\n"
 		"																					\n"
-		"uniform mat4 translate;															\n"
-		"uniform mat4 rotation;																\n"
-		"uniform mat4 scaling;																\n"
-		"																					\n"
 		"out vec3 vs_color;  																\n"
+		"out vec2 vs_texture_coord;															\n"
 		"																					\n"
 		"void main(void) {					 												\n"
-		"	//gl_Position = projection * translate * rotation * scaling * vec4(pos, 1.0f);	\n"
 		"	gl_Position = projection * view * model * vec4(pos, 1.0f);						\n"
 		"	vs_color = color;																\n"
+		"	vs_texture_coord = vec2(texture_coord.x, texture_coord.y * -1.0f);				\n"
 		"}																					\n"
 	};
 
 	static const char* fragment_shader_source[] = {
-		"#version 450 core					\n"
-		"									\n"
-		"in vec3 vs_color;					\n"
-		"out vec4 color;					\n"
-		"									\n"
-		"void main(void) {					\n"
-		"	color = vec4(vs_color, 1.0);	\n"
-		"}									\n"
+		"#version 450 core																					\n"
+		"																									\n"
+		"in vec2 vs_texture_coord;																			\n"
+		"in vec3 vs_color;																					\n"
+		"uniform sampler2D texture0;																		\n"
+		"uniform sampler2D texture1;																		\n"
+		"																									\n"
+		"out vec4 color;																					\n"
+		"																									\n"
+		"void main(void) {																					\n"
+		"	color = texture(texture0, vs_texture_coord);	\n"
+		"}																									\n"
 	};
 
 	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -136,17 +140,12 @@ void handlePerspective() {
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, value_ptr(projectionMatrix));
 }
 
-void draw(vector<GLfloat> vertices, GLsizeiptr size_vertices,
-	vector<GLfloat> colors, GLsizeiptr size_colors,
-	vector<GLushort> index, GLsizeiptr size_index,
-	GLenum type, GLsizei count) {
+void draw(vector<GLfloat> object, GLsizeiptr size_object, vector<GLushort> index, GLsizeiptr size_index, GLenum type, GLsizei count) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
-	glBufferData(GL_ARRAY_BUFFER, size_vertices, vertices.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object_colors);
-	glBufferData(GL_ARRAY_BUFFER, size_colors, colors.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBufferData(GL_ARRAY_BUFFER, size_object, object.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertex_buffer_object_index);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_index, index.data(), GL_STATIC_DRAW);
@@ -155,10 +154,6 @@ void draw(vector<GLfloat> vertices, GLsizeiptr size_vertices,
 	glDepthFunc(GL_LEQUAL);
 
 	glDrawElements(type, count, GL_UNSIGNED_SHORT, 0);
-	//glDrawArrays(type, 0, size_vertices / 4/3);
-}
-
-void handleCameraMovement(GLuint index) {
 }
 
 void handleCameraRotation() {
@@ -168,30 +163,30 @@ void handleCameraRotation() {
 }
 
 void render() {
-	viewMatrix = translate(mat4(1.0f), vec3(-states.cameraX, -states.cameraY, -states.cameraZ));
+	viewMatrix = translate(mat4(1.0f), vec3(-states.cameraPosition[0], -states.cameraPosition[1], -states.cameraPosition[2]));
 
 	handleRealTimeTransformations();
 	handleCameraRotation();
 
-	//glPointSize(5.0f);
-
 	for (GLuint i = 0; i < objectsToRender.size(); i++) {
 		objIndex = objectsToRender[i].index;
+		indexTexture = objectsToRender[i].index_texture;
 
-		modelMatrix = translate(mat4(1.0f), vec3(-states.cameraX, -states.cameraY, -states.cameraZ));
+		modelMatrix = translate(mat4(1.0f), vec3(-states.cameraPosition[0], -states.cameraPosition[1], -states.cameraPosition[2]));
 		modelMatrix *= translate(mat4(1.0f), objectsToRender[i].translation);
 		modelMatrix *= scale(mat4(1.0f), objectsToRender[i].scaling);
 		if (i == INDEX_SATURN_RING) {
-			modelMatrix *= rotate(mat4(1.0f), 90*3.14f/180, vec3(1.0f, 1.0f, 0.0f));
+			modelMatrix *= rotate(mat4(1.0f), 100 * states.pi / 180, vec3(1.0f, 0.0f, 0.0f));
 		}
 		modelMatrix *= rotate(mat4(1.0f), objectsToRender[i].rotation.radians, objectsToRender[i].rotation.vec);
 
 		glUniformMatrix4fv(modelViewLoc, 1, GL_FALSE, value_ptr(modelMatrix));
 
-		draw(objects[objIndex].vertices, objects[objIndex].vertices.size() * 4,
-			objectsToRender[i].colors, objectsToRender[i].colors.size() * 4,
-			objects[objIndex].indexs, objects[objIndex].indexs.size() * 2,
-			GL_TRIANGLES, objects[objIndex].indexs.size());
+		applyTexture(textures[indexTexture].TEXTURE, textures[indexTexture].TEXTURE_WIDTH, textures[indexTexture].TEXTURE_HEIGHT);
+
+		draw(objects[objIndex].object, objects[objIndex].object.size() * 4,
+			 objects[objIndex].indexs, objects[objIndex].indexs.size() * 2,
+			 GL_TRIANGLES, objects[objIndex].indexs.size());
 	}
 }
 
@@ -201,21 +196,29 @@ void startup() {
 
 	glfwSetKeyCallback(window, processInput);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
 
 	glGenVertexArrays(1, &vertex_array_object);
 	glBindVertexArray(vertex_array_object);
 
 	glGenBuffers(1, &vertex_buffer_object);
-	glGenBuffers(1, &vertex_buffer_object_colors);
 	glGenBuffers(1, &vertex_buffer_object_index);
+	glGenBuffers(1, &vertex_buffer_lighting);
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	loadTextures();
+	glActiveTexture(GL_TEXTURE0);
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
 
 	viewLoc = glGetUniformLocation(program, "view");
 	modelViewLoc = glGetUniformLocation(program, "model");
 	projectionLoc = glGetUniformLocation(program, "projection");
-
 
 	handlePerspective();
 }
@@ -223,6 +226,10 @@ void startup() {
 void shutdown() {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(3);
+
+	freeTextures();
 
 	glDeleteProgram(program);
 	glDeleteVertexArrays(1, &vertex_array_object);

@@ -4,6 +4,7 @@
 #include "main.hpp"
 
 typedef struct States {
+	GLfloat pi;
 	GLboolean wireframe;
 	GLfloat speed;
 
@@ -11,13 +12,9 @@ typedef struct States {
 	glm::vec3 center;
 	glm::vec3 up;
 
-	GLfloat cameraX;
-	GLfloat	cameraY;
-	GLfloat cameraZ;
-
-	GLfloat cubeLocX;
-	GLfloat cubeLocY;
-	GLfloat cubeLocZ;
+	glm::vec3 cameraPosition;
+	GLfloat cameraRotationX;
+	GLfloat cameraRotationY;
 } States;
 
 extern States states;

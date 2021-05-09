@@ -93,8 +93,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Lucas\Documents\OpenGL\glew-2.1.0\lib\Release\Win32;C:\Users\Lucas\Documents\OpenGL\glfw-3.3.2.bin.WIN32\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Lucas\source\repos\SolarSystem\SolarSystem\SOIL2\lib;C:\Users\Lucas\Documents\OpenGL\glew-2.1.0\lib\Release\Win32;C:\Users\Lucas\Documents\OpenGL\glfw-3.3.2.bin.WIN32\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32s.lib;soil2-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -147,6 +147,7 @@
     <ClCompile Include="objectsDefinition.cpp" />
     <ClCompile Include="renderResolvers.cpp" />
     <ClCompile Include="states.cpp" />
+    <ClCompile Include="textures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hotkeys.hpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="objectsDefinition.hpp" />
     <ClInclude Include="renderResolvers.hpp" />
     <ClInclude Include="states.hpp" />
+    <ClInclude Include="textures.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
