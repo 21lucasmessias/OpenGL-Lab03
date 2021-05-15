@@ -30,6 +30,18 @@ const GLfloat rotationSaturn = (10 * 60 + 14) * 60;
 const GLfloat rotationUranus = 17 * 3600;
 const GLfloat rotationNeptune = 16 * 3600;
 
+const vector<GLfloat> rotations = {
+	rotationSun,
+	rotationMercury,
+	rotationVenus,
+	rotationEarth,
+	rotationMars,
+	rotationJupiter,
+	rotationSaturn,
+	rotationUranus,
+	rotationNeptune,
+};
+
 const GLfloat translationMercury = (long long int)87 * 24 * 3600 / MORE_SPEED_TRANSLATION;
 const GLfloat translationVenus = (long long int)225 * 24 * 3600 / MORE_SPEED_TRANSLATION;
 const GLfloat translationEarth = (long long int)365 * 24 * 3600 / MORE_SPEED_TRANSLATION;
@@ -39,20 +51,23 @@ const GLfloat translationSaturn = (long long int)30 * 365 * 24 * 3600 / MORE_SPE
 const GLfloat translationUranus = (long long int)165 * 365 * 24 * 3600 / MORE_SPEED_TRANSLATION;
 const GLfloat translationNeptune = (long long int)164 * 365 * 24 * 3600 / MORE_SPEED_TRANSLATION;
 
+void handleSpecificRealTimeTransformations(GLuint index) {
+}
+
 void handleRealTimeTransformations() {
 	const GLfloat time = (GLfloat)glfwGetTime() * 10;
 
 	//Rotation
 	objectsToRender[INDEX_SUN].rotation.radians = time * MORE_SPEED_ROTATION / rotationSun;
-	objectsToRender[INDEX_MERCURY].rotation.radians = -time * MORE_SPEED_ROTATION / rotationMercury;
-	objectsToRender[INDEX_VENUS].rotation.radians = -time * MORE_SPEED_ROTATION / rotationVenus;
-	objectsToRender[INDEX_EARTH].rotation.radians = -time * MORE_SPEED_ROTATION / rotationEarth;
-	objectsToRender[INDEX_MARS].rotation.radians = -time * MORE_SPEED_ROTATION / rotationMars;
-	objectsToRender[INDEX_JUPITER].rotation.radians = -time * MORE_SPEED_ROTATION / rotationJupiter;
-	objectsToRender[INDEX_SATURN].rotation.radians = -time * MORE_SPEED_ROTATION / rotationSaturn;
-	objectsToRender[INDEX_SATURN_RING].rotation.radians = -time * MORE_SPEED_ROTATION / rotationSaturn;
-	objectsToRender[INDEX_URANUS].rotation.radians = -time * MORE_SPEED_ROTATION / rotationUranus;
-	objectsToRender[INDEX_NEPTUNE].rotation.radians = -time * MORE_SPEED_ROTATION / rotationNeptune;
+	objectsToRender[INDEX_MERCURY].rotation.radians = time * MORE_SPEED_ROTATION / rotationMercury;
+	objectsToRender[INDEX_VENUS].rotation.radians = time * MORE_SPEED_ROTATION / rotationVenus;
+	objectsToRender[INDEX_EARTH].rotation.radians = time * MORE_SPEED_ROTATION / rotationEarth;
+	objectsToRender[INDEX_MARS].rotation.radians = time * MORE_SPEED_ROTATION / rotationMars;
+	objectsToRender[INDEX_JUPITER].rotation.radians = time * MORE_SPEED_ROTATION / rotationJupiter;
+	objectsToRender[INDEX_SATURN].rotation.radians = time * MORE_SPEED_ROTATION / rotationSaturn;
+	objectsToRender[INDEX_SATURN_RING].rotation.radians = time * MORE_SPEED_ROTATION / rotationSaturn;
+	objectsToRender[INDEX_URANUS].rotation.radians = time * MORE_SPEED_ROTATION / rotationUranus;
+	objectsToRender[INDEX_NEPTUNE].rotation.radians = time * MORE_SPEED_ROTATION / rotationNeptune;
 
 	//Translation
 	objectsToRender[INDEX_MERCURY].translation[0] = -((GLfloat)cos(time / translationMercury)) * (borderSun + distanceMercury);
@@ -80,26 +95,30 @@ void handleRealTimeTransformations() {
 
 	objectsToRender[INDEX_NEPTUNE].translation[0] = -((GLfloat)cos(time / translationNeptune)) * (borderSun + distanceNeptune);
 	objectsToRender[INDEX_NEPTUNE].translation[2] = ((GLfloat)sin(time / translationNeptune)) * (borderSun + distanceNeptune);
-
-	//Lightning
 }
 
 void bufferSphere() {
-	GLint PRECISION_CIRCLE = 60, i, j;
+	GLint PRECISION_CIRCLE = 30, i, j;
 	GLfloat raio = 5.0f;
 	GLfloat x, y, z;
 	GLfloat pi = 3.14159265359f;
 	GLfloat r = 1.0f, g = 1.0f, b = 1.0f;
+	GLfloat normal_x;
+	GLfloat normal_y;
+	GLfloat normal_z;
 
 	//vertices
 	for (j = PRECISION_CIRCLE/-2; j <= PRECISION_CIRCLE/2; j++) {
 		GLfloat radian = j * 180/PRECISION_CIRCLE * pi / 180;
 
 		if (j == (PRECISION_CIRCLE / -2) || j == (PRECISION_CIRCLE / 2)) {
-
 			x = 0.0f;
 			y = (GLfloat)sin(radian) * raio;
 			z = 0.0f;
+
+			normal_x = 0.0f;
+			normal_y = (GLfloat)sin(radian);
+			normal_z = 0.0f;
 
 			objects[INDEX_SPHERE].object.push_back(x);
 			objects[INDEX_SPHERE].object.push_back(y);
@@ -111,12 +130,20 @@ void bufferSphere() {
 
 			objects[INDEX_SPHERE].object.push_back(0.0f);
 			objects[INDEX_SPHERE].object.push_back(sin(radian));
+
+			objects[INDEX_SPHERE].object.push_back(normal_x);
+			objects[INDEX_SPHERE].object.push_back(normal_y);
+			objects[INDEX_SPHERE].object.push_back(normal_z);
 		}
 		else {
 			for (i = 0; i <= 360; i += 180 / PRECISION_CIRCLE) {
 				x = (GLfloat)cos(i * pi / 180) * raio * cos(radian);
 				y = (GLfloat)sin(radian) * raio;
 				z = (GLfloat)sin(i * pi / 180) * raio * cos(radian);
+
+				normal_x = (GLfloat)cos(i * pi / 180) * cos(radian);
+				normal_y = (GLfloat)sin(radian);
+				normal_z = (GLfloat)sin(i * pi / 180) * cos(radian);
 																
 				objects[INDEX_SPHERE].object.push_back(x);
 				objects[INDEX_SPHERE].object.push_back(y);
@@ -128,10 +155,13 @@ void bufferSphere() {
 
 				objects[INDEX_SPHERE].object.push_back(-i / 360.0f);
 				objects[INDEX_SPHERE].object.push_back((sin(radian) + 1) / 2);
+
+				objects[INDEX_SPHERE].object.push_back(normal_x);
+				objects[INDEX_SPHERE].object.push_back(normal_y);
+				objects[INDEX_SPHERE].object.push_back(normal_z);
 			}
 		}
 	}
-
 
 	//index
 	//top
@@ -141,9 +171,8 @@ void bufferSphere() {
 		objects[INDEX_SPHERE].indexs.push_back(i + 1);
 	}
 
-
 	//middle
-	for (i = 1; i < (GLushort)objects[INDEX_SPHERE].object.size()/8 - 2 - PRECISION_CIRCLE*2; i++) {
+	for (i = 1; i < (GLushort)objects[INDEX_SPHERE].object.size()/11 - 2 - PRECISION_CIRCLE*2; i++) {
 		objects[INDEX_SPHERE].indexs.push_back(i);
 		objects[INDEX_SPHERE].indexs.push_back(i + PRECISION_CIRCLE*2 + 1);
 		objects[INDEX_SPHERE].indexs.push_back(i + PRECISION_CIRCLE*2 + 2);
@@ -154,8 +183,8 @@ void bufferSphere() {
 	}
 
 	//bottom
-	for (i = (GLushort)objects[INDEX_SPHERE].object.size()/8 - 2; i >= (GLushort)objects[INDEX_SPHERE].object.size()/8 - 1 - PRECISION_CIRCLE * 2; i--) {
-		objects[INDEX_SPHERE].indexs.push_back((GLushort)objects[INDEX_SPHERE].object.size()/8 - 1);
+	for (i = (GLushort)objects[INDEX_SPHERE].object.size()/11 - 2; i >= (GLushort)objects[INDEX_SPHERE].object.size()/11 - 1 - PRECISION_CIRCLE * 2; i--) {
+		objects[INDEX_SPHERE].indexs.push_back((GLushort)objects[INDEX_SPHERE].object.size()/11 - 1);
 		objects[INDEX_SPHERE].indexs.push_back(i);
 		objects[INDEX_SPHERE].indexs.push_back(i - 1);
 	}
@@ -167,6 +196,9 @@ void bufferArc() {
 	GLfloat x, y, z;
 	GLfloat pi = 3.14159265359f;
 	GLfloat r = 1.0f, g = 1.0f, b = 1.0f;
+	GLfloat normal_x;
+	GLfloat normal_y;
+	GLfloat normal_z;
 
 	//vertices
 	for (j = 0; j < 4; j++) {
@@ -187,6 +219,10 @@ void bufferArc() {
 			x = (GLfloat)cos(i * pi / 180) * raio;
 			y = (GLfloat)sin(i * pi / 180) * raio;
 
+			normal_x = (GLfloat)cos(i * pi / 180);
+			normal_y = (GLfloat)sin(i * pi / 180);
+			normal_z = 1.0f;
+
 			objects[INDEX_RING].object.push_back(x);
 			objects[INDEX_RING].object.push_back(y);
 			objects[INDEX_RING].object.push_back(z);
@@ -197,11 +233,15 @@ void bufferArc() {
 
 			objects[INDEX_RING].object.push_back(-i / 360.0f);
 			objects[INDEX_RING].object.push_back((sin(i * pi / 180) + 1) / 2);
+
+			objects[INDEX_RING].object.push_back(normal_x);
+			objects[INDEX_RING].object.push_back(normal_y);
+			objects[INDEX_RING].object.push_back(normal_z);
 		}
 	}
 
 	//index
-	for (i = 0; i < (GLushort)objects[INDEX_RING].object.size()/8 - PRECISION_RING; i++) {
+	for (i = 0; i < (GLushort)objects[INDEX_RING].object.size()/11 - PRECISION_RING; i++) {
 		if ((i+1) % PRECISION_RING == 0) {
 			objects[INDEX_RING].indexs.push_back(i);
 			objects[INDEX_RING].indexs.push_back(i + PRECISION_RING);

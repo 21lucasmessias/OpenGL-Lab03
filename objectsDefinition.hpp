@@ -5,6 +5,8 @@
 
 #define INDEX_SPHERE 0
 #define INDEX_RING 1
+#define INDEX_PIRAMID 2
+#define INDEX_CUBE 3
 
 using namespace std;
 using namespace glm;

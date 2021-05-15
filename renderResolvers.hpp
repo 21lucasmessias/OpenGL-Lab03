@@ -13,8 +13,10 @@
 #define INDEX_URANUS 7
 #define INDEX_NEPTUNE 8
 #define INDEX_SATURN_RING 9
+#define INDEX_STARS 10
 
 void handleRealTimeTransformations();
 void processObjects();
+void handleSpecificRealTimeTransformations(GLuint index);
 
 #endif

@@ -8,13 +8,9 @@ typedef struct States {
 	GLboolean wireframe;
 	GLfloat speed;
 
-	glm::vec3 eye;
-	glm::vec3 center;
-	glm::vec3 up;
-
-	glm::vec3 cameraPosition;
-	GLfloat cameraRotationX;
-	GLfloat cameraRotationY;
+	vec3 eye;
+	vec3 center;
+	vec3 up;
 } States;
 
 extern States states;

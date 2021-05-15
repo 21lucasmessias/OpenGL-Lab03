@@ -13,34 +13,34 @@ void processInput(GLFWwindow* window, int key, int scancode, int action, int mod
 		else if (key == GLFW_KEY_ESCAPE) {
 			glfwSetWindowShouldClose(window, true);
 		}
-		else if (key == GLFW_KEY_UP) {
-			states.cameraPosition[0] = states.cameraPosition[0] - (GLfloat)sin(states.cameraRotationX * states.pi / 180);
-			states.cameraPosition[1] = states.cameraPosition[1] - (GLfloat)sin(states.cameraRotationY * states.pi / 180);
-			states.cameraPosition[2] = states.cameraPosition[2] + (GLfloat)cos(states.cameraRotationX * states.pi / 180);
-		}
-		else if (key == GLFW_KEY_DOWN) {
-			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin(states.cameraRotationX * states.pi / 180);
-			states.cameraPosition[1] = states.cameraPosition[1] + (GLfloat)sin(states.cameraRotationY * states.pi / 180);
-			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos(states.cameraRotationX * states.pi / 180);
-		}
-		else if (key == GLFW_KEY_LEFT) {
-			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin((states.cameraRotationX + 90.0f) * states.pi / 180);
-			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos((states.cameraRotationX + 90.0f) * states.pi / 180);
 
+		if (key == GLFW_KEY_UP) {
+			states.eye += states.speed * states.center;
 		}
-		else if (key == GLFW_KEY_RIGHT) {
-			states.cameraPosition[0] = states.cameraPosition[0] + (GLfloat)sin((states.cameraRotationX - 90.0f) * states.pi / 180);	
-			states.cameraPosition[2] = states.cameraPosition[2] - (GLfloat)cos((states.cameraRotationX - 90.0f) * states.pi / 180);
+		if (key == GLFW_KEY_DOWN) {
+			states.eye += states.speed * -states.center;
+		}
+		if (key == GLFW_KEY_LEFT) {
+			states.eye += states.speed * -normalize(cross(states.center, states.up));
+		}
+		if (key == GLFW_KEY_RIGHT) {
+			states.eye += states.speed * normalize(cross(states.center, states.up));
 		}
 	}
 }
 
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	states.eye[0] = (GLfloat)sin(xpos * states.pi / 180);
-	states.eye[1] = (GLfloat)sin(ypos * states.pi / 180);
-	states.eye[2] = (GLfloat)cos(xpos * states.pi / 180) * -1;
+	float rotX = 120 * (GLfloat)(ypos - (800 / 2)) / 800;
+	float rotY = 120 * (GLfloat)(xpos - (800 / 2)) / 800;
 
-	states.cameraRotationX = (GLfloat)xpos;
-	states.cameraRotationY = (GLfloat)ypos;
+	vec3 newCenter = rotate(states.center, radians(-rotX), normalize(cross(states.center, states.up)));
+
+	if (abs(angle(newCenter, states.up) - radians(90.0f)) <= radians(85.0f)){
+		states.center = newCenter;
+	}
+
+	states.center = rotate(states.center, radians(-rotY), states.up);
+
+	glfwSetCursorPos(window, (800 / 2), (800 / 2));
 }

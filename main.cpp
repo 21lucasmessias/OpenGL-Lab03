@@ -19,16 +19,17 @@ GLuint objIndex;
 GLuint indexTexture;
 
 GLuint viewLoc;
-GLuint modelViewLoc;
+GLuint modelLoc;
 GLuint projectionLoc;
+GLuint lightResourceLoc;
+GLuint camEyeLoc;
 
 mat4 viewMatrix;
-mat4 modelMatrix;
-mat4 viewCamera;
+mat4 model;
+mat4 view;
+mat4 projection = perspective(radians(45.0f), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 50000.0f);
 
 GLuint texture;
-
-mat4 projectionMatrix = perspective(1.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 50000.0f);
 
 int initalization() {
 	if (!glfwInit()) {
@@ -82,16 +83,21 @@ void compileShaders() {
 		"layout (location = 0) in vec3 pos;													\n"
 		"layout (location = 1) in vec3 color; 												\n"
 		"layout (location = 2) in vec2 texture_coord;										\n"
+		"layout (location = 3) in vec3 normal;												\n"
 		"																					\n"
 		"uniform mat4 model; 																\n"
 		"uniform mat4 view; 																\n"
-		"uniform mat4 projection; 															\n"
 		"																					\n"
 		"out vec3 vs_color;  																\n"
 		"out vec2 vs_texture_coord;															\n"
+		"out vec3 vs_normal;																\n"
+		"out vec3 vs_crntPos;																\n"
 		"																					\n"
 		"void main(void) {					 												\n"
-		"	gl_Position = projection * view * model * vec4(pos, 1.0f);						\n"
+		"   vs_crntPos = vec3(model * vec4(pos, 1.0f));										\n"
+		"	vs_normal = vec3(model * vec4(normal, 0));										\n"
+		"																					\n"
+		"	gl_Position = view * vec4(vs_crntPos, 1.0f);									\n"
 		"	vs_color = color;																\n"
 		"	vs_texture_coord = vec2(texture_coord.x, texture_coord.y * -1.0f);				\n"
 		"}																					\n"
@@ -102,13 +108,37 @@ void compileShaders() {
 		"																									\n"
 		"in vec2 vs_texture_coord;																			\n"
 		"in vec3 vs_color;																					\n"
+		"																									\n"
+		"in vec3 vs_normal;																					\n"
+		"in vec3 vs_crntPos;																				\n"
+		"																									\n"
 		"uniform sampler2D texture0;																		\n"
-		"uniform sampler2D texture1;																		\n"
+		"uniform float lightResource;																		\n"
+		"uniform vec3 camEye;																				\n"
 		"																									\n"
 		"out vec4 color;																					\n"
 		"																									\n"
 		"void main(void) {																					\n"
-		"	color = texture(texture0, vs_texture_coord);	\n"
+		"	vec4 lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);													\n"
+		"   if(lightResource > 0) {																			\n"
+		"		color = texture(texture0, vs_texture_coord);												\n"
+		"	} else {																						\n"
+		"		float ambient = 0.1f;																		\n"
+		"		vec3 lightPos = vec3(0.0f, 0.0f, 0.0f);														\n"
+		"																									\n"
+		"		vec3 lightVec = lightPos - vs_crntPos;														\n"
+		"		float dist = length(lightVec);																\n"
+		"		float a = 0.0001;																			\n"
+		"		float b = 0.00005;																			\n"
+		"		float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);									\n"
+		"																									\n"
+		"		vec3 normal = normalize(vs_normal);															\n"
+		"		vec3 lightDirection = normalize(lightVec);													\n"
+		"																									\n"
+		"		float diffuse = max(dot(normal, lightDirection), 0.0f);										\n"
+		"																									\n"
+		"		color = texture(texture0, vs_texture_coord) * lightColor * (diffuse * inten + ambient);		\n"
+		"   }																								\n"
 		"}																									\n"
 	};
 
@@ -135,17 +165,13 @@ void compileShaders() {
 	glDeleteShader(fragment_shader);
 }
 
-void handlePerspective() {
-	glfwGetFramebufferSize(window, &WIDTH, &HEIGHT);
-	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, value_ptr(projectionMatrix));
-}
-
 void draw(vector<GLfloat> object, GLsizeiptr size_object, vector<GLushort> index, GLsizeiptr size_index, GLenum type, GLsizei count) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
 	glBufferData(GL_ARRAY_BUFFER, size_object, object.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertex_buffer_object_index);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_index, index.data(), GL_STATIC_DRAW);
@@ -156,37 +182,51 @@ void draw(vector<GLfloat> object, GLsizeiptr size_object, vector<GLushort> index
 	glDrawElements(type, count, GL_UNSIGNED_SHORT, 0);
 }
 
-void handleCameraRotation() {
-	viewCamera = lookAt(states.eye, states.center, states.up);
+void handleModel(GLuint i) {
+	model = mat4(1.0f);
+	model = translate(model, objectsToRender[i].translation);
+	model *= scale(mat4(1.0f), objectsToRender[i].scaling);
+	if (i == INDEX_SATURN_RING) {
+		model *= rotate(mat4(1.0f), 100 * states.pi / 180, vec3(1.0f, 0.0f, 0.0f));
+	}
+	model *= rotate(mat4(1.0f), objectsToRender[i].rotation.radians, objectsToRender[i].rotation.vec);
 
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(viewCamera));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, value_ptr(model));
+}
+
+void handleView() {
+	view = lookAt(states.eye, states.eye + states.center, states.up);
+
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(projection * view));
+	glUniformMatrix3fv(camEyeLoc, 1, GL_FALSE, value_ptr(states.eye));
+}
+
+void handleTexture(GLuint i) {
+	indexTexture = objectsToRender[i].index_texture;
+
+	applyTexture(textures[indexTexture].TEXTURE, textures[indexTexture].TEXTURE_WIDTH, textures[indexTexture].TEXTURE_HEIGHT);
+}
+
+void handleLight(GLuint i) {
+	glUniform1f(lightResourceLoc, -1.0f);
+	if (i == INDEX_SUN || i == INDEX_STARS) {
+		glUniform1f(lightResourceLoc, 1.0f);
+	}
 }
 
 void render() {
-	viewMatrix = translate(mat4(1.0f), vec3(-states.cameraPosition[0], -states.cameraPosition[1], -states.cameraPosition[2]));
-
 	handleRealTimeTransformations();
-	handleCameraRotation();
 
 	for (GLuint i = 0; i < objectsToRender.size(); i++) {
-		objIndex = objectsToRender[i].index;
-		indexTexture = objectsToRender[i].index_texture;
+		handleModel(i);
+		handleView();
 
-		modelMatrix = translate(mat4(1.0f), vec3(-states.cameraPosition[0], -states.cameraPosition[1], -states.cameraPosition[2]));
-		modelMatrix *= translate(mat4(1.0f), objectsToRender[i].translation);
-		modelMatrix *= scale(mat4(1.0f), objectsToRender[i].scaling);
-		if (i == INDEX_SATURN_RING) {
-			modelMatrix *= rotate(mat4(1.0f), 100 * states.pi / 180, vec3(1.0f, 0.0f, 0.0f));
-		}
-		modelMatrix *= rotate(mat4(1.0f), objectsToRender[i].rotation.radians, objectsToRender[i].rotation.vec);
+		handleTexture(i);
+		handleLight(i);	
 
-		glUniformMatrix4fv(modelViewLoc, 1, GL_FALSE, value_ptr(modelMatrix));
-
-		applyTexture(textures[indexTexture].TEXTURE, textures[indexTexture].TEXTURE_WIDTH, textures[indexTexture].TEXTURE_HEIGHT);
-
-		draw(objects[objIndex].object, objects[objIndex].object.size() * 4,
-			 objects[objIndex].indexs, objects[objIndex].indexs.size() * 2,
-			 GL_TRIANGLES, objects[objIndex].indexs.size());
+		draw(objects[objectsToRender[i].index].object, objects[objectsToRender[i].index].object.size() * 4,
+			objects[objectsToRender[i].index].indexs, objects[objectsToRender[i].index].indexs.size() * 2,
+			GL_TRIANGLES, objects[objectsToRender[i].index].indexs.size());
 	}
 }
 
@@ -197,7 +237,9 @@ void startup() {
 	glfwSetKeyCallback(window, processInput);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	glfwSetCursorPosCallback(window, cursor_position_callback);
+	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 
 	glGenVertexArrays(1, &vertex_array_object);
 	glBindVertexArray(vertex_array_object);
@@ -216,11 +258,12 @@ void startup() {
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 
+	modelLoc = glGetUniformLocation(program, "model");
 	viewLoc = glGetUniformLocation(program, "view");
-	modelViewLoc = glGetUniformLocation(program, "model");
 	projectionLoc = glGetUniformLocation(program, "projection");
-
-	handlePerspective();
+	
+	lightResourceLoc = glGetUniformLocation(program, "lightResource");
+	camEyeLoc = glGetUniformLocation(program, "camEye");
 }
 
 void shutdown() {
